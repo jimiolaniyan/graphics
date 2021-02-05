@@ -3,17 +3,18 @@
 Python OpenGL practical application.
 """
 # Python built-in modules
-import os                           # os function, i.e. checking file status
+import os  # os function, i.e. checking file status
 
 # External, non built-in modules
-import OpenGL.GL as GL              # standard Python OpenGL wrapper
-import glfw                         # lean window system wrapper for OpenGL
-import numpy as np                  # all matrix manipulations & OpenGL args
+import OpenGL.GL as GL  # standard Python OpenGL wrapper
+import glfw  # lean window system wrapper for OpenGL
+import numpy as np  # all matrix manipulations & OpenGL args
 
 
 # ------------ low level OpenGL object wrappers ----------------------------
 class Shader:
     """ Helper class to create and automatically destroy shader program """
+
     @staticmethod
     def _compile_shader(src, shader_type):
         src = open(src, 'r').read() if os.path.exists(src) else src
@@ -22,7 +23,7 @@ class Shader:
         GL.glShaderSource(shader, src)
         GL.glCompileShader(shader)
         status = GL.glGetShaderiv(shader, GL.GL_COMPILE_STATUS)
-        src = ('%3d: %s' % (i+1, l) for i, l in enumerate(src.splitlines()))
+        src = ('%3d: %s' % (i + 1, l) for i, l in enumerate(src.splitlines()))
         if not status:
             log = GL.glGetShaderInfoLog(shader).decode('ascii')
             GL.glDeleteShader(shader)
@@ -51,7 +52,7 @@ class Shader:
 
     def __del__(self):
         GL.glUseProgram(0)
-        if self.glid:                      # if this is a valid shader object
+        if self.glid:  # if this is a valid shader object
             GL.glDeleteProgram(self.glid)  # object dies => destroy GL object
 
 
@@ -61,18 +62,18 @@ class SimpleTriangle:
 
     def __init__(self, shader):
         self.shader = shader
-
+        self.color = (1, 0, 1)
         # triangle position buffer
         position = np.array(((0, 1.2, 0), (1.2, -.5, 0), (-.9, -.5, 0)), 'f')
 
         self.glid = GL.glGenVertexArrays(1)  # create OpenGL vertex array id
-        GL.glBindVertexArray(self.glid)      # activate to receive state below
+        GL.glBindVertexArray(self.glid)  # activate to receive state below
         self.buffers = [GL.glGenBuffers(1)]  # create buffer for position attrib
         # self.buffers = GL.glGenBuffers(n)	 # if n > 1, use this instead
         # GL.glGenBuffers(n) with n > 1 directly returns a list and not an index
 
         # bind the vbo, upload position data to GPU, declare its size and type
-        GL.glEnableVertexAttribArray(0)      # assign to layout = 0 attribute
+        GL.glEnableVertexAttribArray(0)  # assign to layout = 0 attribute
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.buffers[0])
         GL.glBufferData(GL.GL_ARRAY_BUFFER, position, GL.GL_STATIC_DRAW)
         GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, False, 0, None)
@@ -85,7 +86,13 @@ class SimpleTriangle:
         GL.glDrawArrays(GL.GL_TRIANGLES, 0, 3)
 
         loc = GL.glGetUniformLocation(self.shader.glid, 'color')
-        GL.glUniform3fv(loc, 1, (0, 1, 0.9))
+        GL.glUniform3fv(loc, 1, self.color)
+
+    def key_handler(self, key):
+        if key == glfw.KEY_UP:
+            self.color = (1, 1, 1)
+        if key == glfw.KEY_DOWN:
+            self.color = (0, 1, 1)
 
 
     def __del__(self):
@@ -171,6 +178,6 @@ def main():
 
 
 if __name__ == '__main__':
-    glfw.init()                # initialize window system glfw
-    main()                     # main function keeps variables locally scoped
-    glfw.terminate()           # destroy all glfw windows and GL contexts
+    glfw.init()  # initialize window system glfw
+    main()  # main function keeps variables locally scoped
+    glfw.terminate()  # destroy all glfw windows and GL contexts
