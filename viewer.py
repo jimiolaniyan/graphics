@@ -65,18 +65,25 @@ class SimpleTriangle:
         self.color = (1, 0, 1)
         # triangle position buffer
         position = np.array(((0, 0.5, 0), (0.5, -.5, 0), (-.5, -.5, 0)), 'f')
+        color = np.array(((1, 0, 0), (0, 1, 0), (0, 0, 1)), 'f')
 
         self.glid = GL.glGenVertexArrays(1)  # create OpenGL vertex array id
         GL.glBindVertexArray(self.glid)  # activate to receive state below
-        self.buffers = [GL.glGenBuffers(1)]  # create buffer for position attrib
-        # self.buffers = GL.glGenBuffers(n)	 # if n > 1, use this instead
+        # self.buffers = [GL.glGenBuffers(1)]  # create buffer for position attrib
+
         # GL.glGenBuffers(n) with n > 1 directly returns a list and not an index
+        self.buffers = GL.glGenBuffers(2)	 # if n > 1, use this instead
 
         # bind the vbo, upload position data to GPU, declare its size and type
         GL.glEnableVertexAttribArray(0)  # assign to layout = 0 attribute
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.buffers[0])
         GL.glBufferData(GL.GL_ARRAY_BUFFER, position, GL.GL_STATIC_DRAW)
         GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, False, 0, None)
+
+        GL.glEnableVertexAttribArray(1)  # assign to layout = 0 attribute
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.buffers[1])
+        GL.glBufferData(GL.GL_ARRAY_BUFFER, color, GL.GL_STATIC_DRAW)
+        GL.glVertexAttribPointer(1, 3, GL.GL_FLOAT, False, 0, None)
 
     def draw(self, projection, view, model):
         GL.glUseProgram(self.shader.glid)
