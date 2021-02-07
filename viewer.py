@@ -64,7 +64,7 @@ class SimpleTriangle:
         self.shader = shader
         self.color = (1, 0, 1)
         # triangle position buffer
-        position = np.array(((0, 1.2, 0), (1.2, -.5, 0), (-.9, -.5, 0)), 'f')
+        position = np.array(((0, 0.5, 0), (0.5, -.5, 0), (-.5, -.5, 0)), 'f')
 
         self.glid = GL.glGenVertexArrays(1)  # create OpenGL vertex array id
         GL.glBindVertexArray(self.glid)  # activate to receive state below
