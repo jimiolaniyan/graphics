@@ -104,24 +104,16 @@ class VertexArray:
         GL.glDeleteBuffers(len(self.buffers), self.buffers)
 
 
-# ------------  Scene object classes ------------------------------------------
-class Pyramid:
-    """ Exercise 1 and 2: Pyramid object """
+# ------------ Exercise 3: Implement this generic mesh class ------------------
+class Mesh:
+    """ Generic mesh class with attributes passed as constructor arguments.
+        Most mesh classes can then derive from this base implementation """
 
-    def __init__(self, shader):
+    def __init__(self, shader, attributes, index=None):
         self.shader = shader
+        self.vertex_array = VertexArray(attributes=attributes, index=index)
 
-        # TODO: this is still a triangle, new values needed for Pyramid
-        # position = np.array(((0, .5, 0), (.5, -.5, 0), (-.5, -.5, 0)), 'f')
-        position = np.array(((-0.5, 0, -0.5), (-0.5, 0, 0.5), (0.5, 0, -0.5), (0.5, 0, 0.5), (0, 1, 0)), np.float32)
-        color = np.array(((1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1)), np.float32)
-        # self.index = np.array((0, 1, 2), np.uint32)
-        self.index = np.array((0, 2, 1, 2, 3, 1, 1, 3, 4, 1, 4, 0, 2, 4, 3, 0, 4, 2), np.uint32)
-
-        attributes = [position, color]
-        self.vertex_array = VertexArray(attributes=attributes, index=self.index)
-
-    def draw(self, projection, view, model):
+    def draw(self, projection, view, model, primitives=GL.GL_TRIANGLES):
         GL.glUseProgram(self.shader.glid)
 
         loc = GL.glGetUniformLocation(self.shader.glid, 'view')
@@ -133,19 +125,15 @@ class Pyramid:
         self.vertex_array.execute(GL.GL_TRIANGLES)
 
 
-# ------------ Exercise 3: Implement this generic mesh class ------------------
-class Mesh:
-    """ Generic mesh class with attributes passed as constructor arguments.
-        Most mesh classes can then derive from this base implementation """
+# ------------  Scene object classes ------------------------------------------
+class Pyramid(Mesh):
+    """ Exercise 1 and 2: Pyramid object """
 
-    def __init__(self, shader, attributes, index=None):
-        self.shader = shader
-        # TODO pass on these buffers to a VertexArray Object
-
-    def draw(self, projection, view, model, primitives=GL.GL_TRIANGLES):
-        GL.glUseProgram(self.shader.glid)
-        # TODO: instantiate uniform matrices that are need in all drawables
-        # TODO: draw th Mesh by executing the VertexArray
+    def __init__(self, shader):
+        position = np.array(((-0.5, 0, -0.5), (-0.5, 0, 0.5), (0.5, 0, -0.5), (0.5, 0, 0.5), (0, 1, 0)), np.float32)
+        color = np.array(((1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1)), np.float32)
+        index = np.array((0, 2, 1, 2, 3, 1, 1, 3, 4, 1, 4, 0, 2, 4, 3, 0, 4, 2), np.uint32)
+        super(Pyramid, self).__init__(shader, attributes=[position, color], index=index)
 
 
 # ------------  Viewer class & window management ------------------------------
