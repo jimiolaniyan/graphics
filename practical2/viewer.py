@@ -7,6 +7,7 @@ import os  # os function, i.e. checking file status
 
 # External, non built-in modules
 import OpenGL.GL as GL  # standard Python OpenGL wrapper
+import assimpcy
 import glfw  # lean window system wrapper for OpenGL
 import numpy as np  # all matrix manipulations & OpenGL args
 import sys  # for sys.exit
@@ -227,6 +228,24 @@ class Viewer:
         self.trackball.zoom(deltay, glfw.get_window_size(win)[1])
 
 
+# -------------- 3D resource loader -----------------------------------------
+def load(file, shader):
+    """ load resources from file using assimp, return list of Mesh """
+    try:
+        pp = assimpcy.aiPostProcessSteps
+        flags = pp.aiProcess_Triangulate | pp.aiProcess_GenSmoothNormals
+        scene = assimpcy.aiImportFile(file, flags)
+    except assimpcy.all.AssimpError as exception:
+        print('ERROR loading', file + ': ', exception.args[0].decode())
+        return []
+
+    meshes = [Mesh(shader, [m.mVertices, m.mNormals], m.mFaces)
+              for m in scene.mMeshes]
+    size = sum((mesh.mNumFaces for mesh in scene.mMeshes))
+    print('Loaded %s\t(%d meshes, %d faces)' % (file, len(meshes), size))
+    return meshes
+
+
 # -------------- main program and scene setup --------------------------------
 def main():
     """ create window, add shaders & scene objects, then run rendering loop """
@@ -234,7 +253,10 @@ def main():
     color_shader = Shader("color.vert", "color.frag")
 
     # place instances of our basic objects
-    viewer.add(Pyramid(color_shader))
+    # viewer.add(Pyramid(color_shader))
+    meshes = load('suzanne.obj', color_shader)
+    for m in meshes:
+        viewer.add(m)
 
     # start rendering loop
     viewer.run()
