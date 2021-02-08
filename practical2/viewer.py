@@ -3,18 +3,19 @@
 Python OpenGL practical application.
 """
 # Python built-in modules
-import os                           # os function, i.e. checking file status
+import os  # os function, i.e. checking file status
 
 # External, non built-in modules
-import OpenGL.GL as GL              # standard Python OpenGL wrapper
-import glfw                         # lean window system wrapper for OpenGL
-import numpy as np                  # all matrix manipulations & OpenGL args
-import sys                          # for sys.exit
+import OpenGL.GL as GL  # standard Python OpenGL wrapper
+import glfw  # lean window system wrapper for OpenGL
+import numpy as np  # all matrix manipulations & OpenGL args
+import sys  # for sys.exit
 
 
 # ------------ low level OpenGL object wrappers ----------------------------
 class Shader:
     """ Helper class to create and automatically destroy shader program """
+
     @staticmethod
     def _compile_shader(src, shader_type):
         src = open(src, 'r').read() if os.path.exists(src) else src
@@ -23,7 +24,7 @@ class Shader:
         GL.glShaderSource(shader, src)
         GL.glCompileShader(shader)
         status = GL.glGetShaderiv(shader, GL.GL_COMPILE_STATUS)
-        src = ('%3d: %s' % (i+1, l) for i, l in enumerate(src.splitlines()))
+        src = ('%3d: %s' % (i + 1, l) for i, l in enumerate(src.splitlines()))
         if not status:
             log = GL.glGetShaderInfoLog(shader).decode('ascii')
             GL.glDeleteShader(shader)
@@ -52,13 +53,14 @@ class Shader:
 
     def __del__(self):
         GL.glUseProgram(0)
-        if self.glid:                      # if this is a valid shader object
+        if self.glid:  # if this is a valid shader object
             GL.glDeleteProgram(self.glid)  # object dies => destroy GL object
 
 
 # ------------ OpenGL vertex array wrapper for Exercise 2 ---------------------
 class VertexArray:
     """ helper class to create and self destroy OpenGL vertex array objects."""
+
     def __init__(self, attributes, index=None, usage=GL.GL_STATIC_DRAW):
         """ Vertex array from attributes and optional index array. Vertex
             Attributes should be list of arrays with one row per vertex. """
@@ -101,6 +103,7 @@ class VertexArray:
         GL.glDeleteVertexArrays(1, [self.glid])
         GL.glDeleteBuffers(len(self.buffers), self.buffers)
 
+
 # ------------  Scene object classes ------------------------------------------
 class Pyramid:
     """ Exercise 1 and 2: Pyramid object """
@@ -111,36 +114,12 @@ class Pyramid:
         # TODO: this is still a triangle, new values needed for Pyramid
         # position = np.array(((0, .5, 0), (.5, -.5, 0), (-.5, -.5, 0)), 'f')
         position = np.array(((-0.5, 0, -0.5), (-0.5, 0, 0.5), (0.5, 0, -0.5), (0.5, 0, 0.5), (0, 1, 0)), np.float32)
-        color = np.array(((1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 0)), 'f')
+        color = np.array(((1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1)), np.float32)
         # self.index = np.array((0, 1, 2), np.uint32)
         self.index = np.array((0, 2, 1, 2, 3, 1, 1, 3, 4, 1, 4, 0, 2, 4, 3, 0, 4, 2), np.uint32)
 
-        self.glid = GL.glGenVertexArrays(1)  # create OpenGL vertex array id
-        GL.glBindVertexArray(self.glid)      # activate to receive state below
-        self.buffers = [GL.glGenBuffers(1)]    # create buffer for position attrib
-
-        # create position attribute, send to GPU, declare type & per-vertex size
-        GL.glEnableVertexAttribArray(0)      # assign to layout = 0 attribute
-        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.buffers[0])
-        GL.glBufferData(GL.GL_ARRAY_BUFFER, position, GL.GL_STATIC_DRAW)
-        GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, False, 0, None)
-
-        self.buffers += [GL.glGenBuffers(1)] 
-        # create color attribute, send to GPU, declare type & per-vertex size
-        GL.glEnableVertexAttribArray(1)      # assign to layout = 1 attribute
-        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.buffers[1])
-        GL.glBufferData(GL.GL_ARRAY_BUFFER, color, GL.GL_STATIC_DRAW)
-        GL.glVertexAttribPointer(1, 3, GL.GL_FLOAT, False, 0, None)
-
-        # create a dedicated index buffer, copy python array to GPU
-        #GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, self.buffers[2])
-        #GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, self.index,
-        #                GL.GL_STATIC_DRAW)
-
-        self.buffers += [GL.glGenBuffers(1)] 
-        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, self.buffers[2])                  # make it active to receive
-        GL.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, self.index, GL.GL_STATIC_DRAW)     # our index array here
-
+        attributes = [position, color]
+        self.vertex_array = VertexArray(attributes=attributes, index=self.index)
 
     def draw(self, projection, view, model):
         GL.glUseProgram(self.shader.glid)
@@ -151,22 +130,14 @@ class Pyramid:
         loc = GL.glGetUniformLocation(self.shader.glid, 'projection')
         GL.glUniformMatrix4fv(loc, 1, True, projection)
 
-        # draw triangle as GL_TRIANGLE indexed mode array, pass array size
-        GL.glBindVertexArray(self.glid)
-        #GL.glDrawElements(GL.GL_TRIANGLES, self.index.size,
-        #                  GL.GL_UNSIGNED_INT, None)
-        GL.glDrawElements(GL.GL_TRIANGLES, self.index.size, GL.GL_UNSIGNED_INT, None)  # 9 indexed verts = 3 triangles
-
-
-    def __del__(self):
-        GL.glDeleteVertexArrays(1, [self.glid])
-        GL.glDeleteBuffers(2, self.buffers)
+        self.vertex_array.execute(GL.GL_TRIANGLES)
 
 
 # ------------ Exercise 3: Implement this generic mesh class ------------------
 class Mesh:
     """ Generic mesh class with attributes passed as constructor arguments.
         Most mesh classes can then derive from this base implementation """
+
     def __init__(self, shader, attributes, index=None):
         self.shader = shader
         # TODO pass on these buffers to a VertexArray Object
@@ -179,6 +150,7 @@ class Mesh:
 
 # ------------  Viewer class & window management ------------------------------
 from transform import Trackball
+
 
 class Viewer:
     """ GLFW viewer window, with classic initialization & graphics loop """
@@ -212,7 +184,7 @@ class Viewer:
 
         # initialize GL by setting viewport and default render characteristics
         GL.glClearColor(0.1, 0.1, 0.1, 0.1)
-        GL.glEnable(GL.GL_CULL_FACE)   # enable backface culling (Exercise 1)
+        GL.glEnable(GL.GL_CULL_FACE)  # enable backface culling (Exercise 1)
         GL.glEnable(GL.GL_DEPTH_TEST)  # enable depth test (Exercise 1)
 
         # initially empty list of object to draw
@@ -222,7 +194,7 @@ class Viewer:
         """ Main render loop for this OpenGL window """
         while not glfw.window_should_close(self.win):
             # clear draw buffer, but also need to clear Z-buffer! (Exercise 1)
-            #GL.glClear(GL.GL_COLOR_BUFFER_BIT)  # comment this, uncomment next
+            # GL.glClear(GL.GL_COLOR_BUFFER_BIT)  # comment this, uncomment next
             GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
 
             win_size = glfw.get_window_size(self.win)
@@ -281,6 +253,6 @@ def main():
 
 
 if __name__ == '__main__':
-    glfw.init()                # initialize window system glfw
-    main()                     # main function keeps variables locally scoped
-    glfw.terminate()           # destroy all glfw windows and GL contexts
+    glfw.init()  # initialize window system glfw
+    main()  # main function keeps variables locally scoped
+    glfw.terminate()  # destroy all glfw windows and GL contexts
