@@ -10,6 +10,8 @@ import OpenGL.GL as GL  # standard Python OpenGL wrapper
 import glfw  # lean window system wrapper for OpenGL
 import numpy as np  # all matrix manipulations & OpenGL args
 
+from transform import rotate, vec
+
 
 # ------------ low level OpenGL object wrappers ----------------------------
 class Shader:
@@ -92,8 +94,11 @@ class SimpleTriangle:
         GL.glBindVertexArray(self.glid)
         GL.glDrawArrays(GL.GL_TRIANGLES, 0, 3)
 
-        loc = GL.glGetUniformLocation(self.shader.glid, 'color')
-        GL.glUniform3fv(loc, 1, self.color)
+        color_loc = GL.glGetUniformLocation(self.shader.glid, 'color')
+        GL.glUniform3fv(color_loc, 1, self.color)
+
+        matrix_loc = GL.glGetUniformLocation(self.shader.glid, 'matrix')
+        GL.glUniformMatrix4fv(matrix_loc, 1, True, rotate(vec(1, 1, 1), 45))
 
     def key_handler(self, key):
         if key == glfw.KEY_UP:
