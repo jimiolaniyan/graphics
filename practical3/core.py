@@ -134,7 +134,7 @@ class Node:
     def draw(self, projection, view, model):
         """ Recursive draw, passing down updated model matrix. """
         for child in self.children:
-            child.draw(projection, view, model)  # TODO TP3: hierarchical update
+            child.draw(projection, view, model @ self.transform)  # TODO TP3: hierarchical update
 
     def key_handler(self, key):
         """ Dispatch keyboard events to children """
@@ -160,6 +160,8 @@ class Viewer(Node):
 
         # make win's OpenGL context current; no OpenGL calls can happen before
         glfw.make_context_current(self.win)
+
+        glfw.swap_interval(1)
 
         # initialize trackball
         self.trackball = Trackball()
